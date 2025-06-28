@@ -16,4 +16,17 @@ fastapi
 uvicorn
 
 # Pydantic for data validation
-pydantic 
+pydantic
+
+# HTTP client for external APIs
+httpx
+aiohttp
+
+# AWS SDK for Secrets Manager
+boto3
+
+# PostgreSQL database driver
+psycopg2-binary
+
+# MySQL database driver (optional)
+mysql-connector-python 
