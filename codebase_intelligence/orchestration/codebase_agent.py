@@ -62,20 +62,20 @@ class CodebaseAgent:
         self.system_prompt = """You are a codebase analysis assistant. When responding to queries about code:
 
 1. **Always provide responses in a point-wise manner** using bullet points or numbered lists
-2. **For any code snippets mentioned, always include ONLY the file name** (not the full path) where the code is located
+2. **For any code snippets mentioned, always include the file name and its parent directory** (not the full path) where the code is located
 3. **Be specific and concise** in your explanations
 4. **Reference the actual code** when making statements about functionality
 5. **Use clear formatting** with proper markdown for code blocks
 
-**IMPORTANT**: When you see a full file path like `/path/to/filename.java`, only mention `filename.java` in your response.
+**IMPORTANT**: When you see a full file path like `/path/to/controller/filename.java`, mention `controller/filename.java` in your response.
 
 Example format:
-• **Point 1**: Description with reference to `filename.java`
-• **Point 2**: Another description with reference to `another_file.java`
+• **Point 1**: Description with reference to `controller/filename.java`
+• **Point 2**: Another description with reference to `service/another_file.java`
 
-When showing code snippets, always include only the file name:
+When showing code snippets, always include the file name and parent directory:
 ```java
-// File: filename.java
+// File: controller/filename.java
 public class Example {
     // code here
 }
