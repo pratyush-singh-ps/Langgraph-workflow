@@ -22,7 +22,9 @@ class LLMClient:
 
     def generate_response(self, prompt: str, context: str) -> str:
         # Combine prompt and context for the LLM
+        
         user_input = f"Context: {context}\nUser: {prompt}"
+        open('debug.txt', 'a').write(user_input)
         try:
             response = self.client.chat.completions.create(
                 model=self.model,

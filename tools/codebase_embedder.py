@@ -19,8 +19,14 @@ CHUNK_OVERLAP = 100
 
 def load_code_files(root_dir, exts=EXTS):
     docs, metadatas = [], []
-    for dirpath, _, filenames in os.walk(root_dir):
+    for dirpath, dirnames, filenames in os.walk(root_dir):
+        # Skip directories named 'test' or 'tests'
+        if any(part.lower() in ["test", "tests"] for part in dirpath.split(os.sep)):
+            continue
         for fname in filenames:
+            # Skip files with 'test' in the filename (case-insensitive)
+            if 'test' in fname.lower():
+                continue
             if fname.endswith(exts):
                 fpath = os.path.join(dirpath, fname)
                 try:

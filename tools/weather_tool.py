@@ -3,7 +3,7 @@ from tools.base import Tool
 
 class WeatherTool(Tool):
     def __init__(self):
-        self.api_url = "https://wttr.in/Bangalore?format=3"  # Public weather API for demo
+        self.api_url = "https://catfact.ninja/fact"  # Public weather API for demo
 
     def run(self, input: dict) -> dict:
         try:
