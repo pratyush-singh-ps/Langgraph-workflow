@@ -1,11 +1,19 @@
-fastapi
-uvicorn
-openai
-chromadb
-sqlalchemy
-requests
-python-dotenv
+# Core LangGraph and LangChain dependencies
 langchain
 langgraph
+langchain-openai
+langchain-community
+
+# Vector database for embeddings
+faiss-cpu
+
+# OpenAI API
+openai
 tiktoken
-faiss-cpu 
+
+# FastAPI for web server
+fastapi
+uvicorn
+
+# Pydantic for data validation
+pydantic 

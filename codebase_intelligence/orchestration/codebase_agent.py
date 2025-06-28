@@ -1,3 +1,13 @@
+"""
+Codebase Agent - LangGraph Workflow
+
+Responsible for:
+- Orchestrating the complete codebase analysis workflow
+- Managing state transitions between retrieval and generation
+- Coordinating between code retrieval and LLM response generation
+- Providing a unified interface for codebase queries
+"""
+
 # Requirements: pip install langchain langgraph openai tiktoken faiss-cpu
 try:
     import langgraph
@@ -10,15 +20,16 @@ except ImportError as e:
 
 import sys
 import os
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
-from tools.codebase_retriever import CodebaseRetriever
+from codebase_intelligence.retrieval.codebase_retriever import CodebaseRetriever
 
 # Define the state schema
 from typing import TypedDict, List, Optional
 from langchain_core.messages import BaseMessage
 
 class AgentState(TypedDict):
+    """State schema for the LangGraph workflow."""
     messages: List[BaseMessage]
     query: str
     codebase: Optional[str]  # "ccp-vap", "ccp-execute", or "both"
@@ -26,7 +37,18 @@ class AgentState(TypedDict):
     response: Optional[str]
 
 class CodebaseAgent:
+    """
+    Main agent class that orchestrates codebase analysis using LangGraph.
+    
+    Responsibilities:
+    - Building and managing LangGraph workflows
+    - Coordinating code retrieval and response generation
+    - Managing conversation state and context
+    - Providing a clean interface for codebase queries
+    """
+    
     def __init__(self):
+        """Initialize the CodebaseAgent with retriever and LLM."""
         self.retriever = CodebaseRetriever()
         
         # Initialize the LLM for LangGraph
@@ -40,7 +62,12 @@ class CodebaseAgent:
         self.workflow = self._build_workflow()
     
     def _build_workflow(self):
-        """Build the LangGraph workflow"""
+        """
+        Build the LangGraph workflow with nodes and edges.
+        
+        Returns:
+            Compiled LangGraph workflow
+        """
         workflow = StateGraph(AgentState)
         
         # Add nodes
@@ -57,13 +84,22 @@ class CodebaseAgent:
         return workflow.compile()
     
     def _retrieve_code_node(self, state: AgentState) -> AgentState:
-        """Retrieve relevant code based on the query"""
+        """
+        Retrieve relevant code based on the query.
+        
+        Args:
+            state: Current workflow state
+            
+        Returns:
+            Updated state with retrieved documents
+        """
         query = state["query"]
         codebase = state.get("codebase", "both")
         
         print(f"🔍 Retrieving code for: {query}")
         print(f"📁 Codebase: {codebase}")
         
+        # Retrieve relevant documents
         if codebase == "ccp-vap":
             docs = self.retriever.retrieve_from_vap(query, k=5)
         elif codebase == "ccp-execute":
@@ -73,16 +109,11 @@ class CodebaseAgent:
         
         print(f"📄 Found {len(docs)} relevant code chunks")
         
-        # Format retrieved docs for context
-        context = ""
-        for i, doc in enumerate(docs):
-            context += f"\n--- Code Chunk {i+1} ---\n"
-            context += f"Source: {doc.metadata.get('source', 'Unknown')}\n"
-            context += f"Content:\n{doc.page_content}\n"
-        
+        # Update state with retrieved documents
         state["retrieved_docs"] = docs
         
         # Add context to messages
+        context = self.retriever.format_retrieved_docs(docs)
         if context:
             context_message = f"Here is relevant code from the codebase:\n{context}\n\nPlease use this code to answer the user's question."
             state["messages"].append(HumanMessage(content=context_message))
@@ -90,7 +121,15 @@ class CodebaseAgent:
         return state
     
     def _generate_response_node(self, state: AgentState) -> AgentState:
-        """Generate response using the LLM with retrieved context"""
+        """
+        Generate response using the LLM with retrieved context.
+        
+        Args:
+            state: Current workflow state
+            
+        Returns:
+            Updated state with generated response
+        """
         messages = state["messages"]
         
         print("🤖 Generating response with LLM...")
@@ -109,7 +148,16 @@ class CodebaseAgent:
         return state
     
     def query_codebase(self, query: str, codebase: str = "both") -> str:
-        """Main method to query the codebase"""
+        """
+        Main method to query the codebase.
+        
+        Args:
+            query: User's question about the codebase
+            codebase: Which codebase to search ("ccp-vap", "ccp-execute", or "both")
+            
+        Returns:
+            Generated response based on codebase analysis
+        """
         # Initialize state
         state = AgentState(
             messages=[HumanMessage(content=query)],
