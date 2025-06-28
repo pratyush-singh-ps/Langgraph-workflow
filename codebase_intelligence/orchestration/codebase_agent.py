@@ -12,7 +12,7 @@ Responsible for:
 try:
     import langgraph
     from langgraph.graph import StateGraph, END
-    from langchain_core.messages import HumanMessage, AIMessage
+    from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
     from langchain_openai import ChatOpenAI
 except ImportError as e:
     print("Missing dependencies. Please run: pip install langchain langgraph openai tiktoken faiss-cpu")
@@ -25,7 +25,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(
 from codebase_intelligence.retrieval.codebase_retriever import CodebaseRetriever
 
 # Define the state schema
-from typing import TypedDict, List, Optional
+from typing import TypedDict, List, Optional, Union
 from langchain_core.messages import BaseMessage
 
 class AgentState(TypedDict):
@@ -54,9 +54,32 @@ class CodebaseAgent:
         # Initialize the LLM for LangGraph
         self.llm = ChatOpenAI(
             base_url="https://ciq-litellm-proxy-service.prod-dbx.commerceiq.ai",
-            api_key="sk-WRDSNGPePp-cHG5Q6WhRjA",
+            api_key="sk-WRDSNGPePp-cHG5Q6WhRjA",  # type: ignore
             model="openai/gpt-4o"
         )
+        
+        # Define system prompt for structured responses
+        self.system_prompt = """You are a codebase analysis assistant. When responding to queries about code:
+
+1. **Always provide responses in a point-wise manner** using bullet points or numbered lists
+2. **For any code snippets mentioned, always include the file name/path** where the code is located
+3. **Be specific and concise** in your explanations
+4. **Reference the actual code** when making statements about functionality
+5. **Use clear formatting** with proper markdown for code blocks
+
+Example format:
+• **Point 1**: Description with reference to `path/to/file.java`
+• **Point 2**: Another description with reference to `path/to/another/file.java`
+
+When showing code snippets, always include the file path:
+```java
+// File: path/to/file.java
+public class Example {
+    // code here
+}
+```
+
+Focus on providing actionable insights and clear explanations based on the actual codebase."""
         
         # Build the workflow
         self.workflow = self._build_workflow()
@@ -130,14 +153,15 @@ class CodebaseAgent:
         Returns:
             Updated state with generated response
         """
-        messages = state["messages"]
+        # Create messages with system prompt
+        messages = [SystemMessage(content=self.system_prompt)] + state["messages"]
         
         print("🤖 Generating response with LLM...")
         
         try:
             # Use the LLM to generate response
             response = self.llm.invoke(messages)
-            state["response"] = response.content
+            state["response"] = str(response.content)
             
             print("✅ Response generated successfully")
             
